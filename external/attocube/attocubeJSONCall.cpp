@@ -306,6 +306,7 @@ static int processInputParameters(cJSON *inputObject, const char* inputValues, v
         int boolInput;
         void* arrayInput;
         char buffer2Bytes[2];
+        int arraySize;
         switch(*inputValues)
         {
             // Array
@@ -317,7 +318,7 @@ static int processInputParameters(cJSON *inputObject, const char* inputValues, v
                 //printf("Input parameter array of: %s\n", buffer2Bytes);
 
                 arrayInput = va_arg(*args, void*);
-                int arraySize = va_arg(*args, int);
+                arraySize = va_arg(*args, int);
 
                 //printf("Array size %d\n", arraySize);
                 if (*inputValues == 'i' || *inputValues == 'u')

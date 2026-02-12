@@ -28,11 +28,11 @@
 #else
 /** Definitions for the windows DLL interface                                        */
 
-#ifdef  DLL_EXPORT
+//#ifdef  DLL_EXPORT
 #define ATTOCUBE_API __declspec(dllexport) _stdcall  /**< For internal use of this header */
-#else
-#define ATTOCUBE_API __declspec(dllimport) _stdcall  /**< For external use of this header */
-#endif
+//#else
+//#define ATTOCUBE_API __declspec(dllimport) _stdcall  /**< For external use of this header */
+//#endif
 
 #endif
 

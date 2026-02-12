@@ -6,11 +6,13 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
     const char* device = "10.99.70.238";
 
     int deviceHandle;
     int error = Connect(device, &deviceHandle);
+    if(error == ATTOCUBE_Ok) qDebug() << "connected";
+    else qDebug() << "not connected";
+    MainWindow w;
+    w.show();
     return a.exec();
 }

@@ -34,8 +34,10 @@ endif()
 add_library(
     attolib STATIC
     "${LIBRARY_SRC}"
+    libattoDry-1.0.0.dll
     )
 
-target_link_libraries(attolib ${LIBS_TO_LINK} libattoDry-1.0.0.dll)
+target_link_libraries(attolib ${LIBS_TO_LINK})
+
 
 
