@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.19)
 project(cryostat LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 add_subdirectory(external)
 
+include_directories("C:/Program Files/Andor SDK/")
+include_directories("C:/Program Files/Andor SDK/Shamrock64/C/All")
+link_directories("C:/Program Files/Andor SDK/")
+link_directories("C:/Program Files/Andor SDK/Shamrock64/C/All")
 qt_standard_project_setup()
 
 qt_add_executable(cryostat
@@ -20,6 +24,8 @@ target_link_libraries(cryostat
         Qt::Core
         Qt::Widgets
         attolib
+        atmcd64m
+        ShamrockCIFm
 )
 
 include(GNUInstallDirs)

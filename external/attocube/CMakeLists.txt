@@ -32,12 +32,18 @@ if(WIN32)
 endif()
 
 add_library(
-    attolib STATIC
+    attolib SHARED
     "${LIBRARY_SRC}"
     libattoDry-1.0.0.dll
     )
 
-target_link_libraries(attolib ${LIBS_TO_LINK})
+# set_target_properties(attolib PROPERTIES
+#     IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/libattoDry-1.0.0.lib"
+#     IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/libattoDry-1.0.0.dll"
+#     INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}"
+# )
+
+target_link_libraries(attolib ${LIBS_TO_LINK} "${CMAKE_CURRENT_SOURCE_DIR}/libattoDry-1.0.0.lib")
 
 
 
