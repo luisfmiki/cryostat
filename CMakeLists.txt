@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(cryostat LANGUAGES CXX)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets StateMachine)
 
 add_subdirectory(external)
 
@@ -17,12 +17,21 @@ qt_add_executable(cryostat
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
+    darkstyle.h
+    darkstyle.cpp
+    cryostat.h
+    cryostat.cpp
+    spectrometer.h
+    spectrometer.cpp
+    experiment.h
+    experiment.cpp
 )
 
 target_link_libraries(cryostat
     PRIVATE
         Qt::Core
         Qt::Widgets
+        Qt6::StateMachine
         attolib
         atmcd64m
         ShamrockCIFm

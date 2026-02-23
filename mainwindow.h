@@ -16,6 +16,9 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    void setCryoConnStatus(bool status);
+    void setSpecConnStatus(bool status);
+    void enableInputs(bool enable);
 
 private:
     Ui::MainWindow *ui;
