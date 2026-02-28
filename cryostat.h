@@ -6,6 +6,7 @@
 #include <QTimer>
 #include "external/attocube/attocubeJSONCall.h"
 #include "external/attocube/attoDry.h"
+#include "experiment.h"
 
 class CryostatController : public QObject
 {
@@ -13,13 +14,13 @@ class CryostatController : public QObject
 
 public:
     explicit CryostatController(QObject* parent = nullptr);
+    ~CryostatController();
     int initialize();
     int setTemperature(double kelvin);
-
-public slots:
-    void startSweep(double startK, double endK, double stepK);
+    double getTemperature();
+    void startSweep();
     void stopSweep();
-    void specAcquired();
+    bool isTemperatureStable(double current, double target);
 
 signals:
     void temperatureUpdated(double temperature);
@@ -28,7 +29,7 @@ signals:
     void error(QString message);
 
 private:
-    bool isTemperatureStable(double current, double target);
+
 
     double m_start;
     double m_end;

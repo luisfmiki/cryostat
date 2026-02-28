@@ -1,6 +1,4 @@
 #include "spectrometer.h"
-#include "ATMCD32D.H"
-#include "ShamrockCIF.h"
 #include <vector>
 #include <thread>
 
@@ -17,40 +15,28 @@ int SpectrometerController::initialize()
         return 1;
     }
 
-    if (ShamrockInitialize(path) != DRV_SUCCESS) {
+    if (ATSpectrographInitialize(nullptr) != ATSPECTROGRAPH_SUCCESS) {
         return 1;
     }
-    GetDetector(&m_width, nullptr);
+    GetDetector(&m_width, &m_height);
+    SetImage(1, 1, 1, m_width, 1, m_height);
+    SetReadMode(0);              // FVB
+    SetAcquisitionMode(1);       // Singles
+    ATSpectrographSetNumberPixels(0, m_width);
+    ATSpectrographSetPixelWidth(0, 26);
+    m_wavelength.resize(m_width);
+    ATSpectrographGetCalibration(0, m_wavelength.data(), m_width);
+    //ATSpectrographSetShutter(0, SHUTTER_OPEN);
+    ATSpectrographSetFlipperMirror(0, INPUT_FLIPPER, DIRECT);
+    ATSpectrographSetFlipperMirror(0, OUTPUT_FLIPPER, SIDE);
     return 0;
 }
 
-void SpectrometerController::configure(double exposure,
-                                       int accumulations,
-                                       int gratingLines,
-                                       double gratingPositionNm,
-                                       double slitWidthMicrons)
-{
-    SetReadMode(0);              // FVB
-    SetAcquisitionMode(1);       // Single
-    SetExposureTime(exposure);
-    SetNumberAccumulations(accumulations);
-
-    // Select grating
-    if (gratingLines == 300) ShamrockSetGrating(0, 1);
-    if (gratingLines == 600) ShamrockSetGrating(0, 2);
-    if (gratingLines == 1200) ShamrockSetGrating(0, 3);
-
-    ShamrockSetWavelength(0, gratingPositionNm);
-    ShamrockSetAutoSlitWidth(0, 1, slitWidthMicrons);
-}
 
 void SpectrometerController::coolTo(double temperatureC)
 {
     SetTemperature(static_cast<int>(temperatureC));
     CoolerON();
-
-    if (waitForTemperature())
-        emit coolingReady();
 }
 
 bool SpectrometerController::waitForTemperature()
@@ -70,24 +56,95 @@ bool SpectrometerController::waitForTemperature()
     }
 }
 
-void SpectrometerController::acquireSpectrum()
+void SpectrometerController::acquireSpectrum(double exp, int acc)
 {
+
+    SetExposureTime((float)(exp/1000));
+    SetNumberAccumulations(acc);
+
     StartAcquisition();
     WaitForAcquisition();
 
-    std::vector<long> buffer(m_width);
+    QVector<long> buffer(m_width);
+
     GetAcquiredData(buffer.data(), m_width);
 
-    QVector<double> intensity(m_width);
-    QVector<double> wavelength(m_width);
+    emit spectrumReady(m_wavelength, buffer);
+}
 
-    std::vector<float> wl(m_width);
-    ShamrockGetCalibration(0, wl.data(), m_width);
+void SpectrometerController::checkCCDTemp(int *temperature) {
+    GetTemperature(temperature);
+    emit ccdTempReadReady(*temperature);
+}
 
-    for (int i = 0; i < m_width; ++i) {
-        intensity[i] = buffer[i];
-        wavelength[i] = wl[i];
+SpectrometerController::~SpectrometerController(){
+    CoolerOFF();
+}
+
+void SpectrometerController::changeSlit(double value){
+    ATSpectrographSetSlitWidth(0, INPUT_SIDE, static_cast<float>(value));
+}
+
+void SpectrometerController::changeGrating(int grating) {
+    if (grating == 0) {
+        if(m_grating == 0) return;
+        ATSpectrographSetGrating(0, 1);
+        m_grating = 0;
     }
+    if (grating == 1) {
+        if(m_grating == 1) return;
+        ATSpectrographSetGrating(0, 2);
+        m_grating = 1;
+    }
+    if (grating == 2) {
+        if(m_grating == 2) return;
+        ATSpectrographSetGrating(0, 3);
+        m_grating = 2;
+    }
+    ATSpectrographGetCalibration(0, m_wavelength.data(), m_width);
+    emit gratingChanged();
+}
 
-    emit spectrumReady(wavelength, intensity);
+SpecParams SpectrometerController::currentParameters() {
+    SpecParams p;
+    ATSpectrographGetGrating(0, &p.grating);
+    m_grating = p.grating - 1;
+    ATSpectrographGetSlitWidth(0, INPUT_SIDE, &p.slit_width);
+    m_slit = p.slit_width;
+    ATSpectrographGetWavelength(0, &p.central_wl);
+    eATSpectrographShutterMode s;
+    ATSpectrographGetShutter(0, &s);
+    p.shutter_state = s;
+    m_shutter = s;
+    return p;
+}
+
+void SpectrometerController::changeWavelength(double wl) {
+    ATSpectrographSetWavelength(0, static_cast<float>(wl));
+    ATSpectrographGetCalibration(0, m_wavelength.data(), m_width);
+    emit changedWavelength();
+}
+
+void SpectrometerController::livePlot(bool enable, double exp, int acc) {
+    if(m_first_liveplot) {
+        m_exp = exp;
+        m_acc = acc;
+        SetExposureTime((float)(exp/1000));
+        SetNumberAccumulations(acc);
+        m_first_liveplot = false;
+    }
+    if(!enable) m_first_liveplot = true;
+    else {
+        StartAcquisition();
+        WaitForAcquisition();
+
+        QVector<long> buffer(m_width);
+
+        GetAcquiredData(buffer.data(), m_width);
+        emit liveSpecReady(m_wavelength, buffer);
+    }
+}
+
+void SpectrometerController::closeShutter(bool close) {
+    ATSpectrographSetShutter(0, close ? SHUTTER_CLOSED : SHUTTER_OPEN);
 }
